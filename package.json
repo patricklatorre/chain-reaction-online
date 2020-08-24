@@ -7,8 +7,8 @@
         "start": "node server/dist/index.js",
         "watch": "concurrently \"npm:watch:*\"",
         "watch:server": "nodemon",
-        "watch:client": "parcel watch client/src/index.html --out-dir client/dist/ --public-url ./",
-        "build": "npm run build:client && npm run build:server",
+        "watch:client": "parcel watch client/src/index.html --out-dir client/dist/ --public-url ./ --no-source-maps",
+        "build": "npm run build:server",
         "build:server": "tsc",
         "build:client": "parcel build client/src/index.html --out-dir client/dist/ --public-url ./ --no-source-maps",
         "test": "echo \"Error: no test specified\" && exit 1"
