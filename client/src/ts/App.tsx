@@ -1,5 +1,4 @@
 import * as React from 'react';
-import './App.css';
 
 import Board from './Board';
 import ioClient from './ioClient';

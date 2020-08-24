@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { interval } from 'rxjs';
 import { map, takeWhile } from 'rxjs/operators';
-import './Board.css';
 import { initBoardState, initExplodeMap } from './BoardInitializers';
 import gState from './globalState';
 import ioClient from './ioClient';
