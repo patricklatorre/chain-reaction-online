@@ -53311,11 +53311,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 var clientDev = 'http://localhost:3000';
 var clientNgrok = 'https://67f2bfec57a1.ngrok.io';
-var clientProd = 'https://chainreact.netlify.app';
+var clientProd = 'https://chainpop.herokuapp.com';
 var serverDev = 'http://localhost:8080';
 var serverProd = 'https://chainreaction-server.herokuapp.com';
 var endpoints = {
-  client: clientNgrok,
+  client: clientProd,
   server: serverProd
 };
 exports.default = endpoints;
@@ -54109,7 +54109,7 @@ var react_dom_1 = __importDefault(require("react-dom"));
 
 var App_1 = __importDefault(require("./App"));
 
-react_dom_1.default.render( /*#__PURE__*/React.createElement(App_1.default, null), document.getElementById('root'));
+react_dom_1.default.render( /*#__PURE__*/React.createElement(React.StrictMode, null, /*#__PURE__*/React.createElement(App_1.default, null)), document.getElementById('root'));
 },{"react":"../../node_modules/react/index.js","react-dom":"../../node_modules/react-dom/index.js","./App":"ts/App.tsx"}],"../../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -54138,7 +54138,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61978" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62314" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
