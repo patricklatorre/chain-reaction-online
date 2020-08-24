@@ -53924,9 +53924,10 @@ function (_super) {
         if (roomInfo === null) {
           alert("Sorry, can't join that game!");
           return;
-        }
+        } // ! FIXME roomInfo shouldn't take playerInfo
 
-        globalState_1.default.roomInfo = playerInfo;
+
+        globalState_1.default.roomInfo = roomInfo;
 
         _this.forceUpdate();
 
@@ -54019,14 +54020,11 @@ function (_super) {
 
   App.prototype.render = function () {
     var srvDetails = '';
-    var contentPane;
     var menuBar;
 
     if (globalState_1.default.roomInfo.id !== undefined) {
       srvDetails = endpoints_1.default.client + "/" + globalState_1.default.roomInfo.id;
-    }
-
-    if (srvDetails === '') {
+    } else {
       menuBar = /*#__PURE__*/React.createElement("div", {
         className: "menu-bar"
       }, /*#__PURE__*/React.createElement("div", {
@@ -54039,7 +54037,6 @@ function (_super) {
       }, "+ Create Game")));
     }
 
-    var board = /*#__PURE__*/React.createElement(Board_1.default, null);
     return /*#__PURE__*/React.createElement("div", null, menuBar, /*#__PURE__*/React.createElement("div", {
       className: "underbar"
     }, /*#__PURE__*/React.createElement("p", {
@@ -54050,7 +54047,7 @@ function (_super) {
         fontWeight: 'bold'
       },
       onClick: this.copyInviteLink
-    }, srvDetails))), board);
+    }, srvDetails))), /*#__PURE__*/React.createElement(Board_1.default, null));
   };
 
   ;
@@ -54138,7 +54135,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62314" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63539" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

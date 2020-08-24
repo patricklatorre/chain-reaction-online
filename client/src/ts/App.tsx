@@ -30,7 +30,8 @@ class App extends React.Component<any, any> {
         return;
       }
 
-      gState.roomInfo = playerInfo;
+      // ! FIXME roomInfo shouldn't take playerInfo
+      gState.roomInfo = roomInfo;
       this.forceUpdate();
 
       if (
@@ -119,14 +120,11 @@ class App extends React.Component<any, any> {
 
   render() {
     let srvDetails = '';
-    let contentPane;
     let menuBar;
 
     if (gState.roomInfo.id !== undefined) {
       srvDetails = `${endpoints.client}/${gState.roomInfo.id}`
-    }
-
-    if (srvDetails === '') {
+    } else {
       menuBar = (
         <div className="menu-bar">
           <div className="menu-bar-start">
@@ -136,8 +134,6 @@ class App extends React.Component<any, any> {
         </div>
       );
     }
-
-    const board = (<Board />);
 
     return (
       <div>
@@ -152,7 +148,7 @@ class App extends React.Component<any, any> {
             >{srvDetails}</span>
           </p>
         </div>
-        {board}
+        <Board />
       </div>
     );
   };
