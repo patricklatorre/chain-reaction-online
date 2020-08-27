@@ -27,11 +27,11 @@ div.underbar {
   color: #455;
 
   @media screen and (max-width: 510px) {
-    font-size: 1.1em;
+    font-size: 0.9em;
   }
 
   @media screen and (max-width: 376px) {
-    font-size: 1em;
+    font-size: 0.8em;
   }
 }
 
@@ -52,8 +52,8 @@ span.player-info {
   border-radius: 4px;
   opacity: 70%;
 
-    margin: 0.1rem;
-    padding: 0.24rem 0.36rem;
+  margin: 0.1rem;
+  padding: 0.24rem 0.36rem;
 }
 
 #invite-link {
