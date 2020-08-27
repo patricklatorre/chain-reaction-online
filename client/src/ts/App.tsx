@@ -126,7 +126,11 @@ class App extends React.Component<any, any> {
       startScreen = (
         <div className="menu-bar">
           <div className="menu-bar-start">
-            <h2 className='title-header linear-wipe'>Chain Reaction</h2>
+            <div className="spinner">
+              <div className="dot1"></div>
+              <div className="dot2"></div>
+            </div>
+            <h2 className='title-header linear-wipe'>Chainpop</h2>
             <button className='menu-item' onClick={this.createRoom}>+ Create Game</button>
           </div>
         </div>
@@ -148,7 +152,11 @@ class App extends React.Component<any, any> {
       <div>
         {startScreen}
         <div className='underbar'>{inviteLink}</div>
-        <Board />
+        {
+          startScreen
+            ? undefined
+            : <Board />
+        }
       </div>
     );
   };
