@@ -11,8 +11,8 @@ class Board extends React.Component<any, IBoardState> {
   /**
    * Board dimensions.
    */
-  maxRowIndex = 7;
-  maxColIndex = 7;
+  maxRowIndex = 8;
+  maxColIndex = 6;
 
   /**
    * A matrix of when a cell should explode.
