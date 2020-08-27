@@ -29,7 +29,7 @@ class Board extends React.Component<any, IBoardState> {
       isReacting: false,
       isRunning: false,
       isWaitingMoveResponse: false,
-      roomInfo: undefined, // ! DEPRECATED -- currently unused
+      roomInfo: undefined, /* ! DEPRECATED -- currently unused */
     };
   }
 
@@ -59,7 +59,7 @@ class Board extends React.Component<any, IBoardState> {
       gState.roomInfo = roomInfo;
       this.forceUpdate();
 
-      // Don't activateCell() if own move received. Just update roomInfo.
+      /* Don't activateCell() if own move received. Just update roomInfo. */
       if (
         playerInfo.name === gState.playerInfo.name
         && playerInfo.idx === gState.playerInfo.idx
@@ -69,7 +69,7 @@ class Board extends React.Component<any, IBoardState> {
         return;
       }
 
-      // Process move on this board
+      /* Process move on this board */
       this.activateCell(x, y, playerInfo.idx);
     });
 
@@ -91,7 +91,7 @@ class Board extends React.Component<any, IBoardState> {
      * Enable board lock and alert winner.
      */
     ioClient.on('declare_winner', (args: IWinCheckResponse) => {
-      // Don't continue if game was already done.
+      /* Don't continue if game was already done. */
       if (gState.roomInfo.isDone) { return; }
 
       const { roomInfo, playerInfo } = args;
@@ -101,19 +101,19 @@ class Board extends React.Component<any, IBoardState> {
       gState.roomInfo = roomInfo;
       this.forceUpdate();
 
-      // Leave socket room
+      /* Leave socket room */
       const leaveArgs: ILeaveGameArgs = {
         roomId: gState.roomInfo.id
       };
 
       ioClient.emit('leave_game', leaveArgs);
 
-      alert(`${playerInfo.name} (Player ${playerInfo.idx + 1}) has won, nerd.`);
+      alert(`${playerInfo.name} (Player ${playerInfo.idx + 1}) has won! 🎉`);
     });
   };
 
   activateCell = (clickedX: number, clickedY: number, owner: number) => {
-    // Lock board when processing and animating.
+    /* Lock board when processing and animating. */
     this.setState({ isReacting: true });
 
     const oldOwner = this.state.board[clickedY][clickedY].owner;
@@ -147,22 +147,22 @@ class Board extends React.Component<any, IBoardState> {
         this.state.board[y][x].count = 0;
         this.state.board[y][x].owner = -1;
 
-        // Left
+        /* Left */
         if (x > 0) {
           jobQ.push({ owner: oldOwner, x: x - 1, y });
         }
 
-        // Up
+        /* Up */
         if (y > 0) {
           jobQ.push({ owner: oldOwner, x, y: y - 1 });
         }
 
-        // Right
+        /* Right */
         if (x < this.maxRowIndex) {
           jobQ.push({ owner: oldOwner, x: x + 1, y });
         }
 
-        // Down
+        /* Down */
         if (y < this.maxColIndex) {
           jobQ.push({ owner: oldOwner, x, y: y + 1 });
         }
@@ -181,7 +181,7 @@ class Board extends React.Component<any, IBoardState> {
       /**
        * Check after processing if player is dead.
        */
-      // @ts-ignore
+      /* @ts-ignore */
       const isDead = this.state.hasMadeFirstMove && this.state.board.flat()
         .every((cell: ICell) => (cell.owner !== gState.playerInfo.idx));
 
@@ -265,12 +265,12 @@ class Board extends React.Component<any, IBoardState> {
   }
 
   isButtonDisabled = (cell: ICell) => (
-    this.state.isReacting // If animation is still playing
-    || !this.state.isRunning // or if game hasn't started yet
-    || gState.roomInfo.isDone // or if game is done
-    || this.state.isWaitingMoveResponse // or if server hasn't processed move yet
-    || gState.roomInfo.currentPlayerTurn !== gState.playerInfo.idx // or if it isn't your turn
-    || (cell.owner !== gState.playerInfo.idx && cell.owner !== -1) // or if another player owns cell
+    this.state.isReacting /* If animation is still playing */
+    || !this.state.isRunning /* or if game hasn't started yet */
+    || gState.roomInfo.isDone /* or if game is done */
+    || this.state.isWaitingMoveResponse /* or if server hasn't processed move yet */
+    || gState.roomInfo.currentPlayerTurn !== gState.playerInfo.idx /* or if it isn't your turn */
+    || (cell.owner !== gState.playerInfo.idx && cell.owner !== -1) /* or if another player owns cell */
   );
 
   onCellClick = (x: number, y: number) => {
