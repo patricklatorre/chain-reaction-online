@@ -1,4 +1,4 @@
-const clientDev = 'http://localhost:3000';
+const clientDev = 'http://localhost:8081';
 const clientNgrok = 'https://67f2bfec57a1.ngrok.io';
 const clientProd = 'https://chainpop.herokuapp.com';
 

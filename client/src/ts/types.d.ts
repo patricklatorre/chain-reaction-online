@@ -14,13 +14,6 @@ interface ICell {
   owner: number;
 }
 
-interface IBoardProps {
-  width: number;
-  height: number;
-  playerCount: 1 | 2 | 3 | 4;
-  myPlayerIdx: 0 | 1 | 2 | 3;
-}
-
 interface IBoardState {
   board: ICell[][];
   fx: ICoor;

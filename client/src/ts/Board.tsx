@@ -295,7 +295,7 @@ class Board extends React.Component<any, IBoardState> {
     let playerList: JSX.Element;
     let cellGrid: JSX.Element[];
 
-    if (gState.roomInfo.players === undefined) {
+    if (gState.roomInfo.players !== undefined) {
       playerList = (
         <div className='player-list' >
           {

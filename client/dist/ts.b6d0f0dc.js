@@ -53313,7 +53313,7 @@ exports.Socket = require('./socket');
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var clientDev = 'http://localhost:3000';
+var clientDev = 'http://localhost:8081';
 var clientNgrok = 'https://67f2bfec57a1.ngrok.io';
 var clientProd = 'https://chainpop.herokuapp.com';
 var serverDev = 'http://localhost:8080';
@@ -53777,7 +53777,7 @@ function (_super) {
     var playerList;
     var cellGrid;
 
-    if (globalState_1.default.roomInfo.players === undefined) {
+    if (globalState_1.default.roomInfo.players !== undefined) {
       playerList = /*#__PURE__*/React.createElement("div", {
         className: "player-list"
       }, globalState_1.default.roomInfo.players.map(function (player, i) {
@@ -54131,7 +54131,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60686" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61835" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
