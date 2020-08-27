@@ -15,9 +15,15 @@ class App extends React.Component<any, any> {
      */
     const username = prompt(`Enter a nickname`);
 
-    gState.playerInfo.name = (username === undefined)
-      ? 'anonymous'
-      : username;
+    if (
+      username === undefined
+      || username === null
+      || username.match(/^\s*$/)
+    ) {
+      gState.playerInfo.name = 'anonymous';
+    } else {
+      gState.playerInfo.name = username;
+    }
 
     this.forceUpdate();
 
@@ -133,7 +139,7 @@ class App extends React.Component<any, any> {
             id='invite-link'
             style={{ fontWeight: 'bold' }}
             onClick={this.copyInviteLink}
-          >{`${endpoints.client}/${gState.roomInfo.id}`}</span>
+          >{` ${endpoints.client}/${gState.roomInfo.id}`}</span>
         </p>
       );
     }
