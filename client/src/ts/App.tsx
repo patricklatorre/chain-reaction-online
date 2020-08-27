@@ -68,10 +68,10 @@ class App extends React.Component<any, any> {
 
   createRoom = () => {
     const name = gState.playerInfo.name;
-    const count = Number(prompt(`How many players are joining? (4 max.)`, `2`));
+    const count = Number(prompt(`How many players are joining? (10 max.)`, `2`));
     gState.playerInfo.name = name;
     this.forceUpdate();
-
+    
     /**
      * Send host's username and the expected # of players for the room.
      */

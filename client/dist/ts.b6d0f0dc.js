@@ -53349,7 +53349,13 @@ var playerColors = {
   '0': '#A44',
   '1': '#4A4',
   '2': '#44A',
-  '3': '#A4A'
+  '3': '#A8A',
+  '4': '#AA2',
+  '5': '#2AA',
+  '6': '#C60',
+  '7': '#353',
+  '8': '#04B',
+  '9': '#A4A'
 };
 exports.default = playerColors;
 },{}],"ts/Board.tsx":[function(require,module,exports) {
@@ -53960,7 +53966,7 @@ function (_super) {
 
     _this.createRoom = function () {
       var name = globalState_1.default.playerInfo.name;
-      var count = Number(prompt("How many players are joining? (4 max.)", "2"));
+      var count = Number(prompt("How many players are joining? (10 max.)", "2"));
       globalState_1.default.playerInfo.name = name;
 
       _this.forceUpdate();
@@ -54135,7 +54141,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63539" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51919" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
