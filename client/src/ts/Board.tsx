@@ -116,7 +116,7 @@ class Board extends React.Component<any, IBoardState> {
     /* Lock board when processing and animating. */
     this.setState({ isReacting: true });
 
-    const oldOwner = this.state.board[clickedY][clickedY].owner;
+    const oldOwner = this.state.board[clickedY][clickedX].owner;
 
     /**
      * Job queue for processing move and chain reactions.
