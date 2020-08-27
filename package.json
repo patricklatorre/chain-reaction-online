@@ -8,9 +8,9 @@
         "watch": "concurrently \"npm:watch:*\"",
         "watch:server": "nodemon",
         "watch:client": "parcel watch client/src/index.html --out-dir client/dist/ --public-url ./ --no-source-maps",
-        "build": "npm run build:server",
+        "build": "npm run build:server & npm run build:client",
         "build:server": "tsc",
-        "build:client": "parcel build client/src/index.html --out-dir client/dist/ --public-url ./ --no-source-maps",
+        "build:client": "parcel build client/src/index.html --out-dir client/dist/ --public-url ./ --no-source-maps --no-minify",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "browserslist": [
