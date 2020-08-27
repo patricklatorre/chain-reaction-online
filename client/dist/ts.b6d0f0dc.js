@@ -43274,6 +43274,10 @@ exports.initExplodeMap = initExplodeMap;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+/**
+ * ! FIXME App and Board should do undefined check rather than casting this
+ */
+
 var globalState = {
   roomInfo: {},
   playerInfo: {}
@@ -53344,7 +53348,8 @@ exports.default = ioClient;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var playerColors = {
+exports.getColor = exports.playerColors = void 0;
+exports.playerColors = {
   '-1': '#899',
   '0': '#A44',
   '1': '#4A4',
@@ -53357,7 +53362,10 @@ var playerColors = {
   '8': '#04B',
   '9': '#A4A'
 };
-exports.default = playerColors;
+
+exports.getColor = function (owner) {
+  return exports.playerColors[String(owner)];
+};
 },{}],"ts/Board.tsx":[function(require,module,exports) {
 "use strict";
 
@@ -53439,7 +53447,7 @@ var globalState_1 = __importDefault(require("./globalState"));
 
 var ioClient_1 = __importDefault(require("./ioClient"));
 
-var playerColors_1 = __importDefault(require("./playerColors"));
+var playerColors_1 = require("./playerColors");
 
 var Board =
 /** @class */
@@ -53460,12 +53468,6 @@ function (_super) {
      */
 
     _this.explodeAtMap = BoardInitializers_1.initExplodeMap(_this.maxRowIndex, _this.maxColIndex, 1, 2, 3);
-    /**
-     * Player:Color Map
-     * -1 == unowned cell.
-     */
-
-    _this.colorIds = playerColors_1.default;
 
     _this.componentDidMount = function () {
       /**
@@ -53544,9 +53546,10 @@ function (_super) {
         _this.forceUpdate(); // Leave socket room
 
 
-        ioClient_1.default.emit('leave_game', {
+        var leaveArgs = {
           roomId: globalState_1.default.roomInfo.id
-        });
+        };
+        ioClient_1.default.emit('leave_game', leaveArgs);
         alert(playerInfo.name + " (Player " + (playerInfo.idx + 1) + ") has won, nerd.");
       });
     };
@@ -53689,43 +53692,54 @@ function (_super) {
     _this.isUnstable = function (x, y, count) {
       return _this.explodeAtMap[y][x] === count;
     };
-    /**
-     * Gets player-color based on player's idx.
-     */
-
-
-    _this.getColor = function (owner) {
-      return _this.colorIds[String(owner)];
-    };
 
     _this.getPlayerBg = function (idx, isAlive) {
       if (!isAlive) {
         return '#122';
       } else if (idx === globalState_1.default.roomInfo.currentPlayerTurn) {
-        return _this.getColor(idx);
+        return playerColors_1.getColor(idx);
       } else {
-        return _this.getColor(-1);
+        return playerColors_1.getColor(-1);
       }
     };
 
-    _this.makePlayerListEl = function () {
-      if (globalState_1.default.roomInfo.players === undefined) {
-        return undefined;
-      }
+    _this.getCellStyle = function (x, y, cell) {
+      var backgroundColor = playerColors_1.getColor(cell.owner);
+      var borderStyle = _this.isUnstable(x, y, cell.count) ? 'dashed' : 'none';
+      var boxShadow = _this.isUnstable(x, y, cell.count) ? "0 0 17px " + playerColors_1.getColor(cell.owner) : '';
+      var color = cell.count === 0 ? 'transparent' : '#FFF';
+      return {
+        backgroundColor: backgroundColor,
+        borderStyle: borderStyle,
+        boxShadow: boxShadow,
+        color: color
+      };
+    };
 
-      return /*#__PURE__*/React.createElement("div", {
-        className: "player-list"
-      }, globalState_1.default.roomInfo.players.map(function (player, i) {
-        return /*#__PURE__*/React.createElement("span", {
-          className: "player-info",
-          key: i,
-          style: {
-            background: _this.getPlayerBg(i, player.alive),
-            // boxShadow: i === gState.roomInfo.currentPlayerTurn ? `0 0 15px ${this.getColor(i)}` : 'none',
-            textDecoration: player.alive ? 'none' : 'line-through'
-          }
-        }, " ", player.name, " ");
-      }));
+    _this.isButtonDisabled = function (cell) {
+      return _this.state.isReacting // If animation is still playing
+      || !_this.state.isRunning // or if game hasn't started yet
+      || globalState_1.default.roomInfo.isDone // or if game is done
+      || _this.state.isWaitingMoveResponse // or if server hasn't processed move yet
+      || globalState_1.default.roomInfo.currentPlayerTurn !== globalState_1.default.playerInfo.idx // or if it isn't your turn
+      || cell.owner !== globalState_1.default.playerInfo.idx && cell.owner !== -1 // or if another player owns cell
+      ;
+    };
+
+    _this.onCellClick = function (x, y) {
+      _this.setState({
+        hasMadeFirstMove: true,
+        isWaitingMoveResponse: true
+      });
+
+      ioClient_1.default.emit('do_move', {
+        roomId: globalState_1.default.roomInfo.id,
+        playerInfo: globalState_1.default.playerInfo,
+        x: x,
+        y: y
+      });
+
+      _this.activateCell(x, y, globalState_1.default.playerInfo.idx);
     };
 
     _this.state = {
@@ -53760,60 +53774,48 @@ function (_super) {
     var _a = this.state.fx,
         xFx = _a.x,
         yFx = _a.y;
-    var getColor = this.getColor;
-    var isUnstable = this.isUnstable; // const roomInfoStr = JSON.stringify(gState.roomInfo);
-    // const roomInfoEl = roomInfoStr === '{}' ? undefined : (
-    //   <div className='room-bar'>
-    //     <span className='room-info'>{roomInfoStr}</span>
-    //   </div>
-    // );
+    var playerList;
+    var cellGrid;
 
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        opacity: globalState_1.default.roomInfo.isDone ? '40%' : '100%'
-      }
-    }, this.makePlayerListEl(), /*#__PURE__*/React.createElement("div", {
-      className: "board"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "board-content"
-    }, this.state.board.map(function (row, rowN) {
+    if (globalState_1.default.roomInfo.players === undefined) {
+      playerList = /*#__PURE__*/React.createElement("div", {
+        className: "player-list"
+      }, globalState_1.default.roomInfo.players.map(function (player, i) {
+        return /*#__PURE__*/React.createElement("span", {
+          className: "player-info",
+          key: i,
+          style: {
+            background: _this.getPlayerBg(i, player.alive),
+            textDecoration: player.alive ? 'none' : 'line-through'
+          }
+        }, player.name);
+      }));
+    }
+
+    cellGrid = this.state.board.map(function (row, rowN) {
       return /*#__PURE__*/React.createElement("div", {
         key: rowN
       }, row.map(function (cell, colN) {
         return /*#__PURE__*/React.createElement("button", {
-          style: {
-            backgroundColor: getColor(cell.owner),
-            borderStyle: isUnstable(colN, rowN, cell.count) ? 'dashed' : 'none',
-            boxShadow: isUnstable(colN, rowN, cell.count) ? "0 0 17px " + getColor(cell.owner) : '',
-            color: cell.count === 0 ? 'transparent' : '#FFF'
-          },
-          disabled: _this.state.isReacting || // If animation is still playing
-          !_this.state.isRunning || // or if game hasn't started yet
-          globalState_1.default.roomInfo.isDone || // or if game is done
-          _this.state.isWaitingMoveResponse || // or if server hasn't processed move yet
-          globalState_1.default.roomInfo.currentPlayerTurn !== globalState_1.default.playerInfo.idx || // or if it isn't your turn
-          cell.owner !== globalState_1.default.playerInfo.idx && cell.owner !== -1 // or if another player owns cell
-          ,
           key: colN,
+          style: _this.getCellStyle(colN, rowN, cell),
+          disabled: _this.isButtonDisabled(cell),
           className: 'cell ' + _this.getCellClass(colN, rowN, xFx, yFx),
           onClick: function () {
-            _this.setState({
-              hasMadeFirstMove: true,
-              isWaitingMoveResponse: true
-            });
-
-            ioClient_1.default.emit('do_move', {
-              roomId: globalState_1.default.roomInfo.id,
-              playerInfo: globalState_1.default.playerInfo,
-              x: colN,
-              y: rowN
-            });
-
-            _this.activateCell(colN, rowN, globalState_1.default.playerInfo.idx);
+            return _this.onCellClick(colN, rowN);
           }
         }, cell.count);
       }));
-    }))));
+    });
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        opacity: globalState_1.default.roomInfo.isDone ? '40%' : '100%'
+      }
+    }, playerList, /*#__PURE__*/React.createElement("div", {
+      className: "board"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "board-content"
+    }, cellGrid)));
   };
 
   return Board;
@@ -53893,11 +53895,11 @@ var React = __importStar(require("react"));
 
 var Board_1 = __importDefault(require("./Board"));
 
-var ioClient_1 = __importDefault(require("./ioClient"));
+var endpoints_1 = __importDefault(require("./endpoints"));
 
 var globalState_1 = __importDefault(require("./globalState"));
 
-var endpoints_1 = __importDefault(require("./endpoints"));
+var ioClient_1 = __importDefault(require("./ioClient"));
 
 var App =
 /** @class */
@@ -53913,7 +53915,7 @@ function (_super) {
        * If no username was inputted, name as "anonymous".
        */
       var username = prompt("Enter a nickname");
-      globalState_1.default.playerInfo.name = username ? username : "anonymous";
+      globalState_1.default.playerInfo.name = username === undefined ? 'anonymous' : username;
 
       _this.forceUpdate();
       /**
@@ -53930,15 +53932,14 @@ function (_super) {
         if (roomInfo === null) {
           alert("Sorry, can't join that game!");
           return;
-        } // ! FIXME roomInfo shouldn't take playerInfo
-
+        }
 
         globalState_1.default.roomInfo = roomInfo;
 
         _this.forceUpdate();
 
         if (playerInfo.name === globalState_1.default.playerInfo.name && globalState_1.default.playerInfo.idx === undefined) {
-          globalState_1.default.playerInfo.idx = playerInfo.idx; // Adds idx to playerInfo
+          globalState_1.default.playerInfo.idx = playerInfo.idx;
 
           _this.forceUpdate();
         }
@@ -53957,7 +53958,6 @@ function (_super) {
       });
       var splitUrl = window.location.href.split('/');
       var urlEnd = splitUrl[splitUrl.length - 1];
-      console.log('urlend ' + urlEnd);
 
       if (urlEnd !== '' && !urlEnd.includes('.') && !urlEnd.includes(':')) {
         _this.quickJoinRoom(urlEnd);
@@ -53975,18 +53975,19 @@ function (_super) {
        */
 
 
-      ioClient_1.default.emit('create_room', {
+      var createArgs = {
         playerName: name,
         playerCount: count
-      });
+      };
+      ioClient_1.default.emit('create_room', createArgs);
       /**
        * CREATE_ROOM LISTENER
        * Receive details about the newly created server and set
        * creator's idx to 0.
        */
 
-      ioClient_1.default.once('create_room', function (reRoomInfo) {
-        globalState_1.default.roomInfo = reRoomInfo;
+      ioClient_1.default.once('create_room', function (newRoom) {
+        globalState_1.default.roomInfo = newRoom;
         globalState_1.default.playerInfo.idx = 0;
 
         _this.forceUpdate();
@@ -53995,43 +53996,30 @@ function (_super) {
       });
     };
 
-    _this.joinRoom = function () {
-      /**
-       * Prompt for the roomId to join
-       */
-      var roomId = prompt('Room ID');
-      ioClient_1.default.emit('join_room', {
-        roomId: roomId,
-        playerName: globalState_1.default.playerInfo.name
-      });
-    };
-
     _this.quickJoinRoom = function (roomId) {
-      ioClient_1.default.emit('join_room', {
+      var joinArgs = {
         roomId: roomId,
         playerName: globalState_1.default.playerInfo.name
-      });
+      };
+      ioClient_1.default.emit('join_room', joinArgs);
     };
 
     _this.copyInviteLink = function () {
       var _a;
 
-      var link = (_a = document.getElementById('invite-link')) === null || _a === void 0 ? void 0 : _a.innerText; // @ts-ignore
-
-      navigator.clipboard.writeText(link);
+      var url = (_a = document.getElementById('invite-link')) === null || _a === void 0 ? void 0 : _a.innerText;
+      navigator.clipboard.writeText(url);
     };
 
     return _this;
   }
 
   App.prototype.render = function () {
-    var srvDetails = '';
-    var menuBar;
+    var startScreen;
+    var inviteLink;
 
-    if (globalState_1.default.roomInfo.id !== undefined) {
-      srvDetails = endpoints_1.default.client + "/" + globalState_1.default.roomInfo.id;
-    } else {
-      menuBar = /*#__PURE__*/React.createElement("div", {
+    if (globalState_1.default.roomInfo.id === undefined) {
+      startScreen = /*#__PURE__*/React.createElement("div", {
         className: "menu-bar"
       }, /*#__PURE__*/React.createElement("div", {
         className: "menu-bar-start"
@@ -54041,19 +54029,21 @@ function (_super) {
         className: "menu-item",
         onClick: this.createRoom
       }, "+ Create Game")));
+    } else {
+      inviteLink = /*#__PURE__*/React.createElement("p", {
+        className: "underbar-item server-details"
+      }, "Invite Link:", /*#__PURE__*/React.createElement("span", {
+        id: "invite-link",
+        style: {
+          fontWeight: 'bold'
+        },
+        onClick: this.copyInviteLink
+      }, endpoints_1.default.client + "/" + globalState_1.default.roomInfo.id));
     }
 
-    return /*#__PURE__*/React.createElement("div", null, menuBar, /*#__PURE__*/React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", null, startScreen, /*#__PURE__*/React.createElement("div", {
       className: "underbar"
-    }, /*#__PURE__*/React.createElement("p", {
-      className: "underbar-item server-details"
-    }, srvDetails === '' ? '' : 'Invite Link: ', /*#__PURE__*/React.createElement("span", {
-      id: "invite-link",
-      style: {
-        fontWeight: 'bold'
-      },
-      onClick: this.copyInviteLink
-    }, srvDetails))), /*#__PURE__*/React.createElement(Board_1.default, null));
+    }, inviteLink), /*#__PURE__*/React.createElement(Board_1.default, null));
   };
 
   ;
@@ -54061,7 +54051,7 @@ function (_super) {
 }(React.Component);
 
 exports.default = App;
-},{"react":"../../node_modules/react/index.js","./Board":"ts/Board.tsx","./ioClient":"ts/ioClient.ts","./globalState":"ts/globalState.ts","./endpoints":"ts/endpoints.ts"}],"ts/index.tsx":[function(require,module,exports) {
+},{"react":"../../node_modules/react/index.js","./Board":"ts/Board.tsx","./endpoints":"ts/endpoints.ts","./globalState":"ts/globalState.ts","./ioClient":"ts/ioClient.ts"}],"ts/index.tsx":[function(require,module,exports) {
 "use strict";
 
 var __createBinding = this && this.__createBinding || (Object.create ? function (o, m, k, k2) {
@@ -54141,7 +54131,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "51919" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60686" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -4,7 +4,7 @@ import { map, takeWhile } from 'rxjs/operators';
 import { initBoardState, initExplodeMap } from './BoardInitializers';
 import gState from './globalState';
 import ioClient from './ioClient';
-import playerColors from './playerColors';
+import { getColor } from './playerColors';
 
 class Board extends React.Component<any, IBoardState> {
 
@@ -18,12 +18,6 @@ class Board extends React.Component<any, IBoardState> {
    * A matrix of when a cell should explode.
    */
   explodeAtMap = initExplodeMap(this.maxRowIndex, this.maxColIndex, 1, 2, 3);
-
-  /**
-   * Player:Color Map
-   * -1 == unowned cell.
-   */
-  colorIds: any = playerColors;
 
   constructor(props: any) {
     super(props);
@@ -45,7 +39,7 @@ class Board extends React.Component<any, IBoardState> {
      * START_ROOM LISTENER
      * Set isRunning to true, and update roomInfo
      */
-    ioClient.on('start_room', (args: IGameServerState) => {
+    ioClient.on('start_room', (args: IRoom) => {
       gState.roomInfo = args;
       this.setState({ isRunning: args.isRunning });
       console.log(`start_room ${JSON.stringify(args, null, 4)}`);
@@ -57,7 +51,7 @@ class Board extends React.Component<any, IBoardState> {
      * If move is enemy's, it processes the move on this board.
      * If move is your own, remove board lock.
      */
-    ioClient.on('broadcast_move', (args: any) => {
+    ioClient.on('broadcast_move', (args: IDoMoveResponse) => {
       const { roomInfo, playerInfo, x, y } = args;
 
       console.log(`broadcast_move ${JSON.stringify(args, null, 4)}`);
@@ -66,8 +60,10 @@ class Board extends React.Component<any, IBoardState> {
       this.forceUpdate();
 
       // Don't activateCell() if own move received. Just update roomInfo.
-      if (playerInfo.name === gState.playerInfo.name
-        && playerInfo.idx === gState.playerInfo.idx) {
+      if (
+        playerInfo.name === gState.playerInfo.name
+        && playerInfo.idx === gState.playerInfo.idx
+      ) {
         this.setState({ isWaitingMoveResponse: false });
         this.forceUpdate();
         return;
@@ -81,7 +77,7 @@ class Board extends React.Component<any, IBoardState> {
      * BROADCAST_SKIP LISTENER
      * Updates roomInfo on who next turn is.
      */
-    ioClient.on('broadcast_skip', (args: any) => {
+    ioClient.on('broadcast_skip', (args: IDoMoveResponse) => {
       const { roomInfo, playerInfo } = args;
 
       console.log(`broadcast_skip ${JSON.stringify(args, null, 4)}`);
@@ -94,7 +90,7 @@ class Board extends React.Component<any, IBoardState> {
      * DECLARE_WINNER LISTENER
      * Enable board lock and alert winner.
      */
-    ioClient.on('declare_winner', (args: any) => {
+    ioClient.on('declare_winner', (args: IWinCheckResponse) => {
       // Don't continue if game was already done.
       if (gState.roomInfo.isDone) { return; }
 
@@ -106,9 +102,11 @@ class Board extends React.Component<any, IBoardState> {
       this.forceUpdate();
 
       // Leave socket room
-      ioClient.emit('leave_game', {
-        roomId: gState.roomInfo.id,
-      });
+      const leaveArgs: ILeaveGameArgs = {
+        roomId: gState.roomInfo.id
+      };
+
+      ioClient.emit('leave_game', leaveArgs);
 
       alert(`${playerInfo.name} (Player ${playerInfo.idx + 1}) has won, nerd.`);
     });
@@ -185,7 +183,7 @@ class Board extends React.Component<any, IBoardState> {
        */
       // @ts-ignore
       const isDead = this.state.hasMadeFirstMove && this.state.board.flat()
-        .every((cell: ICell) => cell.owner !== gState.playerInfo.idx);
+        .every((cell: ICell) => (cell.owner !== gState.playerInfo.idx));
 
       /**
        * If player is dead, and it is player's turn, skip.
@@ -221,7 +219,9 @@ class Board extends React.Component<any, IBoardState> {
    * if this cell coords matches fx's.
    */
   getCellClass(x: number, y: number, x1: number, y1: number) {
-    return x === x1 && y === y1 ? 'reacting' : '';
+    return (x === x1 && y === y1)
+      ? 'reacting'
+      : '';
   };
 
   /**
@@ -231,110 +231,115 @@ class Board extends React.Component<any, IBoardState> {
     return this.explodeAtMap[y][x] === count;
   };
 
-  /**
-   * Gets player-color based on player's idx.
-   */
-  getColor = (owner: number) => {
-    return this.colorIds[String(owner)];
-  };
-
   getPlayerBg = (idx: number, isAlive: boolean) => {
     if (!isAlive) {
       return '#122';
     } else if (idx === gState.roomInfo.currentPlayerTurn) {
-      return this.getColor(idx);
+      return getColor(idx);
     } else {
-      return this.getColor(-1);
+      return getColor(-1);
     }
   };
 
-  makePlayerListEl = () => {
-    if (gState.roomInfo.players === undefined) {
-      return undefined;
-    }
+  getCellStyle = (x: number, y: number, cell: ICell) => {
+    const backgroundColor = getColor(cell.owner);
 
-    return (
-      <div className='player-list' >
-        {
-          gState.roomInfo.players.map((player: any, i: any) => (
-            <span className='player-info' key={i}
-              style={{
-                background: this.getPlayerBg(i, player.alive),
-                // boxShadow: i === gState.roomInfo.currentPlayerTurn ? `0 0 15px ${this.getColor(i)}` : 'none',
-                textDecoration: player.alive ? 'none' : 'line-through',
-              }}
-            > {player.name} </span>
-          ))}
-      </div>
-    );
+    const borderStyle = this.isUnstable(x, y, cell.count)
+      ? 'dashed'
+      : 'none';
+
+    const boxShadow = this.isUnstable(x, y, cell.count)
+      ? `0 0 17px ${getColor(cell.owner)}`
+      : '';
+
+    const color = (cell.count === 0)
+      ? 'transparent'
+      : '#FFF';
+
+    return {
+      backgroundColor,
+      borderStyle,
+      boxShadow,
+      color
+    };
+  }
+
+  isButtonDisabled = (cell: ICell) => (
+    this.state.isReacting // If animation is still playing
+    || !this.state.isRunning // or if game hasn't started yet
+    || gState.roomInfo.isDone // or if game is done
+    || this.state.isWaitingMoveResponse // or if server hasn't processed move yet
+    || gState.roomInfo.currentPlayerTurn !== gState.playerInfo.idx // or if it isn't your turn
+    || (cell.owner !== gState.playerInfo.idx && cell.owner !== -1) // or if another player owns cell
+  );
+
+  onCellClick = (x: number, y: number) => {
+    this.setState({
+      hasMadeFirstMove: true,
+      isWaitingMoveResponse: true
+    });
+
+    ioClient.emit('do_move', {
+      roomId: gState.roomInfo.id,
+      playerInfo: gState.playerInfo,
+      x: x,
+      y: y,
+    });
+
+    this.activateCell(x, y, gState.playerInfo.idx)
   };
 
   render() {
     const { x: xFx, y: yFx } = this.state.fx;
-    const getColor = this.getColor;
-    const isUnstable = this.isUnstable;
 
-    // const roomInfoStr = JSON.stringify(gState.roomInfo);
-    // const roomInfoEl = roomInfoStr === '{}' ? undefined : (
-    //   <div className='room-bar'>
-    //     <span className='room-info'>{roomInfoStr}</span>
-    //   </div>
-    // );
+    let playerList: JSX.Element;
+    let cellGrid: JSX.Element[];
+
+    if (gState.roomInfo.players === undefined) {
+      playerList = (
+        <div className='player-list' >
+          {
+            gState.roomInfo.players.map((player: any, i: any) => (
+              <span className='player-info'
+                key={i}
+                style={{
+                  background: this.getPlayerBg(i, player.alive),
+                  textDecoration: player.alive ? 'none' : 'line-through',
+                }}
+              >{player.name}</span>
+            ))
+          }
+        </div>
+      );
+    }
+
+    cellGrid = (
+      this.state.board.map((row: ICell[], rowN: number) => (
+        <div key={rowN}>
+          {
+            row.map((cell: ICell, colN: number) => (
+              <button
+                key={colN}
+                style={this.getCellStyle(colN, rowN, cell)}
+                disabled={this.isButtonDisabled(cell)}
+                className={'cell ' + this.getCellClass(colN, rowN, xFx, yFx)}
+                onClick={() => this.onCellClick(colN, rowN)}
+              >
+                {cell.count}
+              </button>
+            ))
+          }
+        </div>
+      ))
+    );
 
     return (
       <div
-        style={{
-          opacity: gState.roomInfo.isDone ? '40%' : '100%',
-        }}>
-        {this.makePlayerListEl()}
+        style={{ opacity: gState.roomInfo.isDone ? '40%' : '100%' }}>
+        {playerList}
         <div className="board" >
           <div className="board-content" >
-            {
-              this.state.board.map((row: ICell[], rowN: number) => (
-                <div key={rowN}>{
-                  row.map((cell: ICell, colN: number) => (
-                    <button
-                      style={{
-                        backgroundColor: getColor(cell.owner),
-                        borderStyle: isUnstable(colN, rowN, cell.count)
-                          ? 'dashed'
-                          : 'none',
-                        boxShadow: isUnstable(colN, rowN, cell.count)
-                          ? `0 0 17px ${getColor(cell.owner)}`
-                          : '',
-                        color: cell.count === 0 ? 'transparent' : '#FFF'
-                      }}
-                      disabled={
-                        this.state.isReacting || // If animation is still playing
-                        !this.state.isRunning || // or if game hasn't started yet
-                        gState.roomInfo.isDone || // or if game is done
-                        this.state.isWaitingMoveResponse || // or if server hasn't processed move yet
-                        gState.roomInfo.currentPlayerTurn !== gState.playerInfo.idx || // or if it isn't your turn
-                        (cell.owner !== gState.playerInfo.idx && cell.owner !== -1) // or if another player owns cell
-                      }
-                      key={colN}
-                      className={
-                        'cell ' +
-                        this.getCellClass(colN, rowN, xFx, yFx)
-                      }
-                      onClick={() => {
-                        this.setState({
-                          hasMadeFirstMove: true,
-                          isWaitingMoveResponse: true
-                        });
-                        ioClient.emit('do_move', {
-                          roomId: gState.roomInfo.id,
-                          playerInfo: gState.playerInfo,
-                          x: colN,
-                          y: rowN,
-                        });
-                        this.activateCell(colN, rowN, gState.playerInfo.idx)
-                      }}
-                    >
-                      {cell.count}
-                    </button>))}
-                </div>
-              ))}
+            {cellGrid}
           </div>
         </div>
       </div>

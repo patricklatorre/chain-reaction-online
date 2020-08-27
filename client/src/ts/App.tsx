@@ -1,9 +1,9 @@
 import * as React from 'react';
-
 import Board from './Board';
-import ioClient from './ioClient';
-import gState from './globalState';
 import endpoints from './endpoints';
+import gState from './globalState';
+import ioClient from './ioClient';
+
 
 class App extends React.Component<any, any> {
 
@@ -14,7 +14,11 @@ class App extends React.Component<any, any> {
      * If no username was inputted, name as "anonymous".
      */
     const username = prompt(`Enter a nickname`);
-    gState.playerInfo.name = username ? username : `anonymous`;
+
+    gState.playerInfo.name = (username === undefined)
+      ? 'anonymous'
+      : username;
+
     this.forceUpdate();
 
     /**
@@ -30,7 +34,6 @@ class App extends React.Component<any, any> {
         return;
       }
 
-      // ! FIXME roomInfo shouldn't take playerInfo
       gState.roomInfo = roomInfo;
       this.forceUpdate();
 
@@ -38,7 +41,7 @@ class App extends React.Component<any, any> {
         playerInfo.name === gState.playerInfo.name
         && gState.playerInfo.idx === undefined
       ) {
-        gState.playerInfo.idx = playerInfo.idx; // Adds idx to playerInfo
+        gState.playerInfo.idx = playerInfo.idx;
         this.forceUpdate();
       }
 
@@ -49,21 +52,21 @@ class App extends React.Component<any, any> {
      * START_ROOM LISTENER
      * Removes board lock by enabling isRunning flag.
      */
-    ioClient.on('start_room', (args: IGameServerState) => {
+    ioClient.on('start_room', (args: IRoom) => {
       gState.roomInfo = args;
       this.forceUpdate();
     });
 
     const splitUrl = window.location.href.split('/');
     const urlEnd = splitUrl[splitUrl.length - 1];
-    console.log('urlend ' + urlEnd);
+
     if (
       urlEnd !== ''
       && !urlEnd.includes('.')
-      && !urlEnd.includes(':')) {
+      && !urlEnd.includes(':')
+    ) {
       this.quickJoinRoom(urlEnd);
     }
-
   };
 
   createRoom = () => {
@@ -71,61 +74,50 @@ class App extends React.Component<any, any> {
     const count = Number(prompt(`How many players are joining? (10 max.)`, `2`));
     gState.playerInfo.name = name;
     this.forceUpdate();
-    
+
     /**
      * Send host's username and the expected # of players for the room.
      */
-    ioClient.emit('create_room', {
+    const createArgs: ICreateRoomArgs = {
       playerName: name,
       playerCount: count,
-    });
+    };
+
+    ioClient.emit('create_room', createArgs);
 
     /**
      * CREATE_ROOM LISTENER
      * Receive details about the newly created server and set
      * creator's idx to 0.
      */
-    ioClient.once('create_room', (reRoomInfo: any) => {
-      gState.roomInfo = reRoomInfo;
+    ioClient.once('create_room', (newRoom: IRoom) => {
+      gState.roomInfo = newRoom;
       gState.playerInfo.idx = 0;
       this.forceUpdate();
       console.log(`create_room ${JSON.stringify(gState.roomInfo, null, 4)}`);
     });
   };
 
-  joinRoom = () => {
-    /**
-     * Prompt for the roomId to join
-     */
-    const roomId = prompt('Room ID');
-
-    ioClient.emit('join_room', {
-      roomId: roomId,
-      playerName: gState.playerInfo.name,
-    });
-  };
-
   quickJoinRoom = (roomId: string) => {
-    ioClient.emit('join_room', {
+    const joinArgs: IJoinRoomArgs = {
       roomId: roomId,
       playerName: gState.playerInfo.name,
-    });
+    };
+
+    ioClient.emit('join_room', joinArgs);
   };
 
   copyInviteLink = () => {
-    const link = document.getElementById('invite-link')?.innerText;
-    // @ts-ignore
-    navigator.clipboard.writeText(link)
+    const url = document.getElementById('invite-link')?.innerText;
+    navigator.clipboard.writeText(url)
   };
 
   render() {
-    let srvDetails = '';
-    let menuBar;
+    let startScreen: JSX.Element;
+    let inviteLink: JSX.Element;
 
-    if (gState.roomInfo.id !== undefined) {
-      srvDetails = `${endpoints.client}/${gState.roomInfo.id}`
-    } else {
-      menuBar = (
+    if (gState.roomInfo.id === undefined) {
+      startScreen = (
         <div className="menu-bar">
           <div className="menu-bar-start">
             <h2 className='title-header linear-wipe'>Chain Reaction</h2>
@@ -133,21 +125,23 @@ class App extends React.Component<any, any> {
           </div>
         </div>
       );
+    } else {
+      inviteLink = (
+        <p className='underbar-item server-details'>
+          Invite Link:
+          <span
+            id='invite-link'
+            style={{ fontWeight: 'bold' }}
+            onClick={this.copyInviteLink}
+          >{`${endpoints.client}/${gState.roomInfo.id}`}</span>
+        </p>
+      );
     }
 
     return (
       <div>
-        {menuBar}
-        <div className='underbar'>
-          <p className='underbar-item server-details'>
-            {srvDetails === '' ? '' : 'Invite Link: '}
-            <span
-              id='invite-link'
-              style={{ fontWeight: 'bold' }}
-              onClick={this.copyInviteLink}
-            >{srvDetails}</span>
-          </p>
-        </div>
+        {startScreen}
+        <div className='underbar'>{inviteLink}</div>
         <Board />
       </div>
     );

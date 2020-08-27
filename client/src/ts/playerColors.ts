@@ -1,4 +1,4 @@
-const playerColors = {
+export const playerColors = {
   '-1': '#899',
   '0': '#A44',
   '1': '#4A4',
@@ -12,4 +12,6 @@ const playerColors = {
   '9': '#A4A',
 };
 
-export default playerColors;
+export const getColor = (owner: number) => {
+  return playerColors[String(owner)];
+};
