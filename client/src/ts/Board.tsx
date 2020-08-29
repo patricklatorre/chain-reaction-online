@@ -158,12 +158,12 @@ class Board extends React.Component<any, IBoardState> {
         }
 
         /* Right */
-        if (x < this.maxRowIndex) {
+        if (x < this.maxColIndex) {
           jobQ.push({ owner: oldOwner, x: x + 1, y });
         }
 
         /* Down */
-        if (y < this.maxColIndex) {
+        if (y < this.maxRowIndex) {
           jobQ.push({ owner: oldOwner, x, y: y + 1 });
         }
       } else {
